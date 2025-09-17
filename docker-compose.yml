@@ -1,9 +1,15 @@
 version: "3"
 
 services:
-    bot:
-        build: .
-        env_file: .env
+    bot1:
+        image: discord-ai
+        env_file: 1.env
+        environment:
+            - OLLAMA=http://host.docker.internal:11434
+        restart: unless-stopped
+    bot2:
+        image: discord-ai
+        env_file: 2.env
         environment:
             - OLLAMA=http://host.docker.internal:11434
         restart: unless-stopped
