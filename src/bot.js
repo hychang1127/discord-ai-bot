@@ -23,21 +23,51 @@ if (servers.length == 0) {
 	throw new Error("No servers available");
 }
 
-let log;
+let log = null;
 process.on("message", data => {
 	if (data.shardID) client.shardID = data.shardID;
 	if (data.logger) log = new Logger(data.logger);
 });
 
+// Safe logging wrapper used throughout the file.
+// Accepts either a function-style logger or an object logger (e.g. meklog Logger)
+function doLog(level, ...args) {
+	try {
+		// If log is a function (some environments may pass a logging function)
+		if (typeof log === "function") {
+			return log(level, ...args);
+		}
+
+		// If log is an object with a `log` method (common logger interface)
+		if (log && typeof log.log === "function") {
+			return log.log(level, ...args);
+		}
+
+		// If log is an object exposing methods matching level names (e.g. info, debug)
+		if (log && typeof level === "number") {
+			// try to map numeric LogLevel to method name if available
+			// fall back to generic log method below
+		} else if (log && typeof level === "string" && typeof log[level] === "function") {
+			return log[level](...args);
+		}
+
+		// Fallback to console
+		// Print level as-is (can be numeric value from LogLevel)
+		console.log(`[LOG ${level}]`, ...args);
+	} catch (err) {
+		// Ensure logging never throws
+		try { console.log(`[LOG ${level}]`, ...args); } catch (e) { /* ignore */ }
+	}
+}
 const logError = (error) => {
 	if (error.response) {
 		let str = `Error ${error.response.status} ${error.response.statusText}: ${error.request.method} ${error.request.path}`;
 		if (error.response.data?.error) {
 			str += ": " + error.response.data.error;
 		}
-		log(LogLevel.Error, str);
+		doLog(LogLevel.Error, str);
 	} else {
-		log(LogLevel.Error, error);
+		doLog(LogLevel.Error, error);
 	}
 };
 
@@ -73,7 +103,7 @@ async function makeRequest(path, method, data) {
 			if (path.startsWith("/")) path = path.substring(1);
 			if (!url.pathname.endsWith("/")) url.pathname += "/"; // safety
 			url.pathname += path;
-			log(LogLevel.Debug, `Making request to ${url}`);
+			doLog(LogLevel.Debug, `Making request to ${url}`);
 			const result = await axios({
 				method, url, data,
 				responseType: "text"
@@ -116,7 +146,7 @@ async function makeStableDiffusionRequest(path, method, data) {
 			if (path.startsWith("/")) path = path.substring(1);
 			if (!url.pathname.endsWith("/")) url.pathname += "/"; // safety
 			url.pathname += path;
-			log(LogLevel.Debug, `Making stable diffusion request to ${url}`);
+			doLog(LogLevel.Debug, `Making stable diffusion request to ${url}`);
 			const result = await axios({
 				method, url, data
 			});
@@ -157,7 +187,7 @@ client.once(Events.ClientReady, async () => {
 		body: commands
 	});
 
-	log(LogLevel.Info, "Successfully reloaded application slash (/) commands.");
+	doLog(LogLevel.Info, "Successfully reloaded application slash (/) commands.");
 });
 
 const messages = {};
@@ -411,7 +441,7 @@ client.on(Events.MessageCreate, async message => {
 						userInput += `\n${i + 1}. File - ${att.name}:\n${response.data}`;
 					}));
 				} catch (error) {
-					log(LogLevel.Error, `Failed to download text files: ${error}`);
+					doLog(LogLevel.Error, `Failed to download text files: ${error}`);
 					await message.reply({ content: "Failed to download text files" });
 					return; // Stop processing if file download fails
 				}
@@ -424,7 +454,7 @@ client.on(Events.MessageCreate, async message => {
 		}
 
 		// log user's message
-		log(LogLevel.Debug, `${message.guild ? `#${message.channel.name}` : "DMs"} - ${message.author.username}: ${userInput}`);
+	doLog(LogLevel.Debug, `${message.guild ? `#${message.channel.name}` : "DMs"} - ${message.author.username}: ${userInput}`);
 
 		// start typing
 		typing = true;
@@ -450,7 +480,7 @@ client.on(Events.MessageCreate, async message => {
 
 			if (useInitialPrompt && messages[channelID].amount == 0) {
 				userInput = `${initialPrompt}\n\n${userInput}`;
-				log(LogLevel.Debug, "Adding initial prompt to message");
+				doLog(LogLevel.Debug, "Adding initial prompt to message");
 			}
 
 			// make request to model
@@ -462,7 +492,7 @@ client.on(Events.MessageCreate, async message => {
 			}));
 
 			if (typeof response != "string") {
-				log(LogLevel.Debug, response);
+				doLog(LogLevel.Debug, response);
 				throw new TypeError("response is not a string, this may be an error with ollama");
 			}
 
@@ -487,7 +517,7 @@ client.on(Events.MessageCreate, async message => {
 			responseText = "(No response)";
 		}
 
-		log(LogLevel.Debug, `Response: ${responseText}`);
+	doLog(LogLevel.Debug, `Response: ${responseText}`);
 
 		const prefix = showStartOfConversation && messages[channelID].amount == 0 ?
 			"> This is the beginning of the conversation, type `.help` for help.\n\n" : "";
