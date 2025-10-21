@@ -4,4 +4,5 @@ pnpm-lock.yml
 node_modules/
 1.env
 2.env
+3.env
 .vscode/
