@@ -13,9 +13,3 @@ services:
         environment:
             - OLLAMA=http://host.docker.internal:11434
         restart: unless-stopped
-    bot3:
-        image: discord-ai:1.0
-        env_file: 3.env
-        environment:
-            - OLLAMA=http://host.docker.internal:11434
-        restart: unless-stopped
