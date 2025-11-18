@@ -404,7 +404,7 @@ client.on(Events.MessageCreate, async message => {
 
 		if (message.guild) {
 			await message.guild.channels.fetch();
-			await message.guild.members.fetch();
+			//await message.guild.members.fetch();     //this line makes bot need 30s break (Discord 2025-10-01 update)
 		}
 
 		userInput = userInput
