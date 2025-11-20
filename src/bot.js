@@ -297,7 +297,7 @@ client.on(Events.MessageCreate, async message => {
 
 		// return if user is a bot, or non-default message
 		if (!message.author.id) return;
-		if (message.author.bot || message.author.id == client.user.id) return;
+		if (message.author.id == client.user.id) return;
 
 		const botRole = message.guild?.members?.me?.roles?.botRole;
 		const myMention = new RegExp(`<@((!?${client.user.id}${botRole ? `)|(&${botRole.id}` : ""}))>`, "g"); // RegExp to match a mention for the bot
