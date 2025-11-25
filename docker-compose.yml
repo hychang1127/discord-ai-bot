@@ -2,7 +2,7 @@ version: "3"
 
 services:
     bot1:
-        image: discord-ai:2.4
+        image: discord-ai:2.4.1
         env_file: 1.env
         environment:
             - OLLAMA=http://host.docker.internal:11434

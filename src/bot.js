@@ -526,7 +526,7 @@ client.on(Events.MessageCreate, async message => {
 		const replyMessageIDs = (await replySplitMessage(message, `${prefix}${responseText}`)).map(msg => msg.id);
 
 		// add response to conversation
-		context = response.filter(e => e.done && e.context)[0].context;
+		context = response.filter(e => e.done && e.context)[0]?.context || context;
 		for (let i = 0; i < replyMessageIDs.length; ++i) {
 			messages[channelID][replyMessageIDs[i]] = context;
 		}
